@@ -215,4 +215,4 @@ Ideas that came up during development but were deliberately left out of this ini
 
 ## License
 
-Not yet specified.
+[MIT](./LICENSE)
