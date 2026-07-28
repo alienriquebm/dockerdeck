@@ -169,4 +169,69 @@ describe("StatusRefreshService", () => {
 		await vi.advanceTimersByTimeAsync(2000);
 		expect(newTask).toHaveBeenCalledTimes(1);
 	});
+
+	it("passes a fresh, non-aborted signal to each task run", async () => {
+		const task = vi.fn<RefreshTask>().mockResolvedValue(undefined);
+		service.start("a", 5, task);
+		await vi.advanceTimersByTimeAsync(0);
+
+		const [, signal] = task.mock.calls[0] as unknown as [() => boolean, AbortSignal];
+		expect(signal.aborted).toBe(false);
+	});
+
+	it("aborts the in-flight task's signal when stop() is called", async () => {
+		let capturedSignal: AbortSignal | undefined;
+		const task: RefreshTask = (_isCurrent, signal) => {
+			capturedSignal = signal;
+			return new Promise<void>(() => {
+				// Never resolves on its own — only stop() can end it.
+			});
+		};
+
+		service.start("a", 5, task);
+		await vi.advanceTimersByTimeAsync(0);
+
+		expect(capturedSignal?.aborted).toBe(false);
+		service.stop("a");
+		expect(capturedSignal?.aborted).toBe(true);
+	});
+
+	it("aborts a still-in-flight task's signal when a newer start() supersedes it", async () => {
+		let capturedSignal: AbortSignal | undefined;
+		const oldTask: RefreshTask = (_isCurrent, signal) => {
+			capturedSignal = signal;
+			return new Promise<void>(() => {
+				// Superseded before it ever resolves.
+			});
+		};
+
+		service.start("a", 5, oldTask);
+		await vi.advanceTimersByTimeAsync(0);
+		expect(capturedSignal?.aborted).toBe(false);
+
+		const newTask = vi.fn<RefreshTask>().mockResolvedValue(undefined);
+		service.start("a", 5, newTask); // internally calls stop("a") first
+		expect(capturedSignal?.aborted).toBe(true);
+	});
+
+	it("does not abort an in-flight task's signal when refreshNow() is skipped due to the in-flight guard", async () => {
+		let capturedSignal: AbortSignal | undefined;
+		const task: RefreshTask = (_isCurrent, signal) => {
+			capturedSignal = signal;
+			return new Promise<void>(() => {
+				// Stays in flight so the second refreshNow() call is a no-op.
+			});
+		};
+
+		service.refreshNow("a", task);
+		await vi.advanceTimersByTimeAsync(0);
+		expect(capturedSignal?.aborted).toBe(false);
+
+		const secondTask = vi.fn<RefreshTask>().mockResolvedValue(undefined);
+		service.refreshNow("a", secondTask); // in-flight guard makes this a no-op
+		await vi.advanceTimersByTimeAsync(0);
+
+		expect(secondTask).not.toHaveBeenCalled();
+		expect(capturedSignal?.aborted).toBe(false);
+	});
 });

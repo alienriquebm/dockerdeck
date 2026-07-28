@@ -26,8 +26,8 @@ export class ContainerRestartAction extends BaseContainerAction<ContainerActionS
 		// Routed through refreshService so a restart in flight both blocks a
 		// repeated press AND the periodic status poll from racing it — the same
 		// in-flight guard already protects the polling loop.
-		this.refreshService.refreshNow(keyAction.id, (isCurrent) =>
-			this.performRestart(keyAction, settings, isCurrent),
+		this.refreshService.refreshNow(keyAction.id, (isCurrent, signal) =>
+			this.performRestart(keyAction, settings, isCurrent, signal),
 		);
 	}
 
@@ -35,6 +35,7 @@ export class ContainerRestartAction extends BaseContainerAction<ContainerActionS
 		keyAction: KeyAction<ContainerActionSettings>,
 		settings: ContainerActionSettings,
 		isCurrent: () => boolean,
+		signal: AbortSignal,
 	): Promise<void> {
 		try {
 			const hostCheck = validateSshHost(settings.sshHost);
@@ -50,7 +51,7 @@ export class ContainerRestartAction extends BaseContainerAction<ContainerActionS
 			const timeoutMs = resolveSshTimeoutSeconds(settings.sshTimeoutSeconds) * 1000;
 
 			await this.renderWorking(keyAction, containerName);
-			const status = await this.dockerService.restartContainer(sshHost, containerName, { timeoutMs });
+			const status = await this.dockerService.restartContainer(sshHost, containerName, { timeoutMs, signal });
 
 			if (!isCurrent()) {
 				return;

@@ -76,7 +76,10 @@ describe("ContainerStatusAction", () => {
 
 		await vi.advanceTimersByTimeAsync(0);
 
-		expect(getContainerStatus).toHaveBeenCalledWith("docker-server", "backend", { timeoutMs: 10_000 });
+		expect(getContainerStatus).toHaveBeenCalledWith("docker-server", "backend", {
+			timeoutMs: 10_000,
+			signal: expect.any(AbortSignal) as AbortSignal,
+		});
 		expect(render).toHaveBeenCalledWith(
 			expect.objectContaining({ title: "backend", status: "healthy", subtitle: "healthy" }),
 		);

@@ -69,8 +69,8 @@ export abstract class BaseContainerAction<
 		}
 		const keyAction = source;
 		const intervalSeconds = resolveRefreshIntervalSeconds(settings.refreshIntervalSeconds);
-		this.refreshService.start(keyAction.id, intervalSeconds, (isCurrent) =>
-			this.refresh(keyAction, settings, isCurrent),
+		this.refreshService.start(keyAction.id, intervalSeconds, (isCurrent, signal) =>
+			this.refresh(keyAction, settings, isCurrent, signal),
 		);
 	}
 
@@ -78,6 +78,7 @@ export abstract class BaseContainerAction<
 		keyAction: KeyAction<TSettings>,
 		settings: TSettings,
 		isCurrent: () => boolean,
+		signal: AbortSignal,
 	): Promise<void> {
 		try {
 			const hostCheck = validateSshHost(settings.sshHost);
@@ -95,7 +96,7 @@ export abstract class BaseContainerAction<
 			const containerName = settings.containerName as string;
 			const timeoutMs = resolveSshTimeoutSeconds(settings.sshTimeoutSeconds) * 1000;
 
-			const status = await this.dockerService.getContainerStatus(sshHost, containerName, { timeoutMs });
+			const status = await this.dockerService.getContainerStatus(sshHost, containerName, { timeoutMs, signal });
 
 			// A newer refresh (triggered by settings changing, the action
 			// reappearing, or a manual operation) may have already superseded this

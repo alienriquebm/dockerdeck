@@ -83,7 +83,10 @@ describe("ContainerRestartAction", () => {
 		action.onKeyDown(makeKeyDown(keyAction, settings));
 		await vi.advanceTimersByTimeAsync(0);
 
-		expect(restartContainer).toHaveBeenCalledWith("docker-server", "backend", { timeoutMs: 10_000 });
+		expect(restartContainer).toHaveBeenCalledWith("docker-server", "backend", {
+			timeoutMs: 10_000,
+			signal: expect.any(AbortSignal) as AbortSignal,
+		});
 		expect(render).toHaveBeenCalledWith(expect.objectContaining({ status: "restarting" }));
 	});
 

@@ -110,7 +110,10 @@ describe("ContainerToggleAction", () => {
 		action.onKeyDown(makeKeyDown(keyAction, settings));
 		await vi.advanceTimersByTimeAsync(0);
 
-		expect(startContainer).toHaveBeenCalledWith("docker-server", "backend", { timeoutMs: 10_000 });
+		expect(startContainer).toHaveBeenCalledWith("docker-server", "backend", {
+			timeoutMs: 10_000,
+			signal: expect.any(AbortSignal) as AbortSignal,
+		});
 		expect(stopContainer).not.toHaveBeenCalled();
 	});
 
@@ -127,7 +130,10 @@ describe("ContainerToggleAction", () => {
 		stopContainer.mockResolvedValue({ name: "backend", visualStatus: "stopped", running: false });
 		action.onKeyDown(makeKeyDown(keyAction, settings)); // second press: confirms
 		await vi.advanceTimersByTimeAsync(0);
-		expect(stopContainer).toHaveBeenCalledWith("docker-server", "backend", { timeoutMs: 10_000 });
+		expect(stopContainer).toHaveBeenCalledWith("docker-server", "backend", {
+			timeoutMs: 10_000,
+			signal: expect.any(AbortSignal) as AbortSignal,
+		});
 	});
 
 	it("forgets the armed confirmation after the confirm window elapses", async () => {
