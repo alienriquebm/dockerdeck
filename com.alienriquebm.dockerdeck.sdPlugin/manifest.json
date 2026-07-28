@@ -1,0 +1,91 @@
+{
+	"Name": "DockerDeck",
+	"Version": "0.1.0.0",
+	"Author": "alienriquebm",
+	"Actions": [
+		{
+			"Name": "Container Status",
+			"UUID": "com.alienriquebm.dockerdeck.container-status",
+			"Icon": "imgs/actions/container-status/icon",
+			"Tooltip": "Shows the live status of a Docker container on a remote host over SSH.",
+			"PropertyInspectorPath": "ui/container-status.html",
+			"Controllers": [
+				"Keypad"
+			],
+			"States": [
+				{
+					"Image": "imgs/actions/container-status/key"
+				}
+			]
+		},
+		{
+			"Name": "Container Toggle",
+			"UUID": "com.alienriquebm.dockerdeck.container-toggle",
+			"Icon": "imgs/actions/container-toggle/icon",
+			"Tooltip": "Starts a stopped container or stops a running one, over SSH.",
+			"PropertyInspectorPath": "ui/container-toggle.html",
+			"Controllers": [
+				"Keypad"
+			],
+			"States": [
+				{
+					"Image": "imgs/actions/container-toggle/key"
+				}
+			]
+		},
+		{
+			"Name": "Container Restart",
+			"UUID": "com.alienriquebm.dockerdeck.container-restart",
+			"Icon": "imgs/actions/container-restart/icon",
+			"Tooltip": "Restarts a Docker container on a remote host over SSH.",
+			"PropertyInspectorPath": "ui/container-restart.html",
+			"Controllers": [
+				"Keypad"
+			],
+			"States": [
+				{
+					"Image": "imgs/actions/container-restart/key"
+				}
+			]
+		},
+		{
+			"Name": "Compose Stack",
+			"UUID": "com.alienriquebm.dockerdeck.compose-stack",
+			"Icon": "imgs/actions/compose-stack/icon",
+			"Tooltip": "Controls a Docker Compose project (up/down/restart) on a remote host over SSH.",
+			"PropertyInspectorPath": "ui/compose-stack.html",
+			"Controllers": [
+				"Keypad"
+			],
+			"States": [
+				{
+					"Image": "imgs/actions/compose-stack/key"
+				}
+			]
+		}
+	],
+	"Category": "DockerDeck",
+	"CategoryIcon": "imgs/plugin/category-icon",
+	"CodePath": "bin/plugin.js",
+	"Description": "Control and monitor Docker containers on a remote server via SSH",
+	"Icon": "imgs/plugin/marketplace",
+	"SDKVersion": 3,
+	"Software": {
+		"MinimumVersion": "7.1"
+	},
+	"OS": [
+		{
+			"Platform": "mac",
+			"MinimumVersion": "12"
+		},
+		{
+			"Platform": "windows",
+			"MinimumVersion": "10"
+		}
+	],
+	"Nodejs": {
+		"Version": "24",
+		"Debug": "enabled"
+	},
+	"UUID": "com.alienriquebm.dockerdeck"
+}

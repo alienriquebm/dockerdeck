@@ -1,0 +1,14 @@
+# Node.js
+node_modules/
+
+# Stream Deck files
+*.sdPlugin/bin
+*.sdPlugin/logs
+*.streamDeckPlugin
+
+# Test artifacts
+logs/
+coverage/
+
+# OS
+.DS_Store

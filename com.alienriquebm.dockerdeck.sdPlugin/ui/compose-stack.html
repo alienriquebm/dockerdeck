@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+
+<head lang="en">
+    <title>Compose Stack Settings</title>
+    <meta charset="utf-8" />
+    <script src="https://sdpi-components.dev/releases/v4/sdpi-components.js"></script>
+</head>
+
+<body>
+    <!--
+        Learn more about property inspector components at https://sdpi-components.dev/docs/components
+    -->
+    <sdpi-item label="SSH Host Alias">
+        <sdpi-textfield setting="sshHost" placeholder="e.g. docker-server (from ~/.ssh/config)" required></sdpi-textfield>
+    </sdpi-item>
+
+    <sdpi-item label="Compose Path">
+        <sdpi-textfield setting="composePath" placeholder="e.g. /srv/projects/myapp" required></sdpi-textfield>
+    </sdpi-item>
+
+    <sdpi-item label="Stack Name (optional)">
+        <sdpi-textfield setting="projectName" placeholder="Defaults to the compose folder name"></sdpi-textfield>
+    </sdpi-item>
+
+    <sdpi-item label="Operation">
+        <sdpi-select setting="operation" default="toggle">
+            <option value="toggle">Toggle (up if down, down if up)</option>
+            <option value="up">Up</option>
+            <option value="down">Down</option>
+            <option value="restart">Restart</option>
+        </sdpi-select>
+    </sdpi-item>
+
+    <sdpi-item label="Refresh Interval (s)">
+        <sdpi-range setting="refreshIntervalSeconds" min="2" max="60" step="1" default="5" showlabels></sdpi-range>
+    </sdpi-item>
+
+    <sdpi-item label="SSH Timeout (s)">
+        <sdpi-range setting="sshTimeoutSeconds" min="2" max="30" step="1" default="10" showlabels></sdpi-range>
+    </sdpi-item>
+</body>
+
+</html>
