@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { EventEmitter } from "node:events";
 import { execFile } from "node:child_process";
+import { mkdirSync } from "node:fs";
 import { SystemSSHService } from "./ssh-service.js";
 
 // `execFile` is imported by ssh-service.ts as a named export of node:child_process.
@@ -10,6 +11,18 @@ import { SystemSSHService } from "./ssh-service.js";
 vi.mock("node:child_process", () => ({
 	execFile: vi.fn(),
 }));
+
+// Same reasoning for node:fs's `mkdirSync` (used to create the ControlPath socket dir):
+// avoid ever touching the real filesystem from a unit test.
+vi.mock("node:fs", () => ({
+	mkdirSync: vi.fn(),
+}));
+
+const mkdirMock = vi.mocked(mkdirSync);
+
+function setPlatform(platform: NodeJS.Platform): void {
+	Object.defineProperty(process, "platform", { value: platform });
+}
 
 // ---------------------------------------------------------------------------
 // Helpers to create a fake child process
@@ -36,12 +49,17 @@ const execFileMock = vi.mocked(execFile);
 // ---------------------------------------------------------------------------
 
 describe("SystemSSHService", () => {
+	const originalPlatform = process.platform;
+
 	beforeEach(() => {
 		execFileMock.mockReset();
+		mkdirMock.mockReset();
+		mkdirMock.mockReturnValue(undefined);
 	});
 
 	afterEach(() => {
 		vi.restoreAllMocks();
+		setPlatform(originalPlatform);
 	});
 
 	it("resolves with stdout and exit code 0 on success", async () => {
@@ -181,5 +199,59 @@ describe("SystemSSHService", () => {
 
 		const result = await promise;
 		expect(result.stdout).toBe("hello");
+	});
+
+	it("adds ControlMaster/ControlPersist/ControlPath options on non-Windows platforms", async () => {
+		setPlatform("darwin");
+		const fakeChild = makeFakeChild();
+		execFileMock.mockReturnValue(fakeChild as unknown as ReturnType<typeof execFile>);
+
+		const service = new SystemSSHService();
+		const promise = service.execute("docker-server", "echo hi");
+		fakeChild.emit("close", 0);
+		await promise;
+
+		expect(mkdirMock).toHaveBeenCalledWith("/tmp/dockerdeck-ssh", { recursive: true, mode: 0o700 });
+
+		const [, args] = execFileMock.mock.calls[0] as unknown as [string, string[]];
+		expect(args).toContain("ControlMaster=auto");
+		expect(args).toContain("ControlPersist=60s");
+		expect(args).toContain("ControlPath=/tmp/dockerdeck-ssh/%C");
+	});
+
+	it("does not add multiplexing options on Windows", async () => {
+		setPlatform("win32");
+		const fakeChild = makeFakeChild();
+		execFileMock.mockReturnValue(fakeChild as unknown as ReturnType<typeof execFile>);
+
+		const service = new SystemSSHService();
+		const promise = service.execute("docker-server", "echo hi");
+		fakeChild.emit("close", 0);
+		await promise;
+
+		expect(mkdirMock).not.toHaveBeenCalled();
+
+		const [, args] = execFileMock.mock.calls[0] as unknown as [string, string[]];
+		expect(args.join(" ")).not.toContain("ControlMaster");
+		expect(args.join(" ")).not.toContain("ControlPersist");
+		expect(args.join(" ")).not.toContain("ControlPath");
+	});
+
+	it("falls back to a plain connection when the socket directory can't be created", async () => {
+		setPlatform("darwin");
+		mkdirMock.mockImplementation(() => {
+			throw new Error("EACCES: permission denied");
+		});
+		const fakeChild = makeFakeChild();
+		execFileMock.mockReturnValue(fakeChild as unknown as ReturnType<typeof execFile>);
+
+		const service = new SystemSSHService();
+		const promise = service.execute("docker-server", "echo hi");
+		fakeChild.emit("close", 0);
+		const result = await promise;
+
+		expect(result.exitCode).toBe(0);
+		const [, args] = execFileMock.mock.calls[0] as unknown as [string, string[]];
+		expect(args.join(" ")).not.toContain("ControlMaster");
 	});
 });

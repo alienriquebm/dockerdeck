@@ -14,6 +14,7 @@
  */
 
 import { execFile } from "node:child_process";
+import { mkdirSync } from "node:fs";
 
 export interface SSHCommandResult {
 	stdout: string;
@@ -43,6 +44,45 @@ const DEFAULT_TIMEOUT_MS = 10_000;
 const DEFAULT_MAX_STDOUT = 512 * 1024; // 512 KB
 const DEFAULT_MAX_STDERR = 64 * 1024; //  64 KB
 
+// How long a ControlMaster connection is kept alive after the last command using it exits.
+// A fresh command within this window reuses the master instead of paying a new handshake.
+const CONTROL_PERSIST_DURATION = "60s";
+
+// Hardcoded /tmp rather than os.tmpdir(): on macOS os.tmpdir() resolves to a long
+// per-user path (/var/folders/xx/.../T, ~50 chars) which, combined with the 40-char
+// hash %C expands to, blows past the 104-byte sun_path limit on Unix domain sockets.
+// /tmp is short and fixed-length, which is why OpenSSH's own docs use it for this exact case.
+const SOCKET_DIR = "/tmp/dockerdeck-ssh";
+
+/**
+ * Builds the -o args that enable SSH connection multiplexing (ControlMaster/ControlPersist),
+ * so repeated calls to the same host reuse one connection instead of a fresh handshake each time.
+ * Not supported on Windows: ControlPath is a Unix domain socket, which the Windows OpenSSH
+ * client doesn't support reliably across versions — falls back to one connection per command.
+ */
+function buildMultiplexingArgs(): string[] {
+	if (process.platform === "win32") {
+		return [];
+	}
+
+	try {
+		mkdirSync(SOCKET_DIR, { recursive: true, mode: 0o700 });
+	} catch {
+		// If the socket directory can't be created, fall back to a plain, non-multiplexed
+		// connection rather than failing the whole command.
+		return [];
+	}
+
+	return [
+		"-o",
+		"ControlMaster=auto",
+		"-o",
+		`ControlPersist=${CONTROL_PERSIST_DURATION}`,
+		"-o",
+		`ControlPath=${SOCKET_DIR}/%C`,
+	];
+}
+
 /**
  * Concrete implementation using the system `ssh` binary.
  * Relies on the user's ~/.ssh/config for host resolution, user and key.
@@ -53,6 +93,7 @@ export class SystemSSHService implements SSHService {
 		const maxStdout = options.maxStdoutBytes ?? DEFAULT_MAX_STDOUT;
 		const maxStderr = options.maxStderrBytes ?? DEFAULT_MAX_STDERR;
 		const connectTimeoutSec = Math.max(1, Math.ceil(timeoutMs / 1000));
+		const multiplexingArgs = buildMultiplexingArgs();
 
 		// Arguments passed as an array — NOT interpreted by a local shell.
 		const sshArgs: string[] = [
@@ -66,6 +107,7 @@ export class SystemSSHService implements SSHService {
 			"ServerAliveCountMax=2",
 			"-o",
 			"LogLevel=ERROR",
+			...multiplexingArgs,
 			// Do NOT add StrictHostKeyChecking=no — let the user's config decide.
 			host,
 			remoteCommand,
