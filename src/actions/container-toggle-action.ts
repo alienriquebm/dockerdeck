@@ -37,13 +37,16 @@ export class ContainerToggleAction extends BaseContainerAction<ContainerToggleSe
 		// Routed through refreshService so a toggle in flight both blocks a
 		// repeated press AND the periodic status poll from racing it — the same
 		// in-flight guard already protects the polling loop.
-		this.refreshService.refreshNow(keyAction.id, (isCurrent) => this.handlePress(keyAction, settings, isCurrent));
+		this.refreshService.refreshNow(keyAction.id, (isCurrent, signal) =>
+			this.handlePress(keyAction, settings, isCurrent, signal),
+		);
 	}
 
 	private async handlePress(
 		keyAction: KeyAction<ContainerToggleSettings>,
 		settings: ContainerToggleSettings,
 		isCurrent: () => boolean,
+		signal: AbortSignal,
 	): Promise<void> {
 		try {
 			const hostCheck = validateSshHost(settings.sshHost);
@@ -68,8 +71,8 @@ export class ContainerToggleAction extends BaseContainerAction<ContainerToggleSe
 			const timeoutMs = resolveSshTimeoutSeconds(settings.sshTimeoutSeconds) * 1000;
 			await this.renderWorking(keyAction, containerName);
 			const status = isRunning
-				? await this.dockerService.stopContainer(sshHost, containerName, { timeoutMs })
-				: await this.dockerService.startContainer(sshHost, containerName, { timeoutMs });
+				? await this.dockerService.stopContainer(sshHost, containerName, { timeoutMs, signal })
+				: await this.dockerService.startContainer(sshHost, containerName, { timeoutMs, signal });
 
 			if (!isCurrent()) {
 				return;

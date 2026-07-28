@@ -75,7 +75,9 @@ export class ComposeStackAction extends SingletonAction<ComposeActionSettings> {
 		const settings = ev.payload.settings;
 		// Routed through refreshService so an operation in flight both blocks a
 		// repeated press AND the periodic status poll from racing it.
-		this.refreshService.refreshNow(keyAction.id, (isCurrent) => this.handlePress(keyAction, settings, isCurrent));
+		this.refreshService.refreshNow(keyAction.id, (isCurrent, signal) =>
+			this.handlePress(keyAction, settings, isCurrent, signal),
+		);
 	}
 
 	private restart(
@@ -87,8 +89,8 @@ export class ComposeStackAction extends SingletonAction<ComposeActionSettings> {
 		}
 		const keyAction = source;
 		const intervalSeconds = resolveRefreshIntervalSeconds(settings.refreshIntervalSeconds);
-		this.refreshService.start(keyAction.id, intervalSeconds, (isCurrent) =>
-			this.refresh(keyAction, settings, isCurrent),
+		this.refreshService.start(keyAction.id, intervalSeconds, (isCurrent, signal) =>
+			this.refresh(keyAction, settings, isCurrent, signal),
 		);
 	}
 
@@ -96,6 +98,7 @@ export class ComposeStackAction extends SingletonAction<ComposeActionSettings> {
 		keyAction: KeyAction<ComposeActionSettings>,
 		settings: ComposeActionSettings,
 		isCurrent: () => boolean,
+		signal: AbortSignal,
 	): Promise<void> {
 		try {
 			const hostCheck = validateSshHost(settings.sshHost);
@@ -114,7 +117,7 @@ export class ComposeStackAction extends SingletonAction<ComposeActionSettings> {
 			const status = await this.dockerService.getComposeStatus(
 				sshHost,
 				composePath,
-				this.composeOptions(settings),
+				this.composeOptions(settings, signal),
 			);
 
 			if (!isCurrent()) {
@@ -138,6 +141,7 @@ export class ComposeStackAction extends SingletonAction<ComposeActionSettings> {
 		keyAction: KeyAction<ComposeActionSettings>,
 		settings: ComposeActionSettings,
 		isCurrent: () => boolean,
+		signal: AbortSignal,
 	): Promise<void> {
 		try {
 			const hostCheck = validateSshHost(settings.sshHost);
@@ -149,7 +153,7 @@ export class ComposeStackAction extends SingletonAction<ComposeActionSettings> {
 			const id = keyAction.id;
 			const sshHost = settings.sshHost as string;
 			const composePath = settings.composePath as string;
-			const options = this.composeOptions(settings);
+			const options = this.composeOptions(settings, signal);
 			const operation = settings.operation ?? "toggle";
 
 			await this.renderWorking(keyAction, settings);
@@ -194,8 +198,11 @@ export class ComposeStackAction extends SingletonAction<ComposeActionSettings> {
 		}
 	}
 
-	private composeOptions(settings: ComposeActionSettings): ComposeOptions {
-		const options: ComposeOptions = { timeoutMs: resolveSshTimeoutSeconds(settings.sshTimeoutSeconds) * 1000 };
+	private composeOptions(settings: ComposeActionSettings, signal: AbortSignal): ComposeOptions {
+		const options: ComposeOptions = {
+			timeoutMs: resolveSshTimeoutSeconds(settings.sshTimeoutSeconds) * 1000,
+			signal,
+		};
 		if (settings.projectName !== undefined && settings.projectName !== "") {
 			options.projectName = settings.projectName;
 		}

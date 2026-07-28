@@ -201,6 +201,33 @@ describe("SystemSSHService", () => {
 		expect(result.stdout).toBe("hello");
 	});
 
+	it("forwards an AbortSignal to execFile so aborting kills the child process", async () => {
+		const fakeChild = makeFakeChild();
+		execFileMock.mockReturnValue(fakeChild as unknown as ReturnType<typeof execFile>);
+
+		const controller = new AbortController();
+		const service = new SystemSSHService();
+		const promise = service.execute("docker-server", "echo hi", { signal: controller.signal });
+		fakeChild.emit("close", 0);
+		await promise;
+
+		const [, , execOptions] = execFileMock.mock.calls[0] as unknown as [string, string[], { signal?: AbortSignal }];
+		expect(execOptions.signal).toBe(controller.signal);
+	});
+
+	it("does not set a signal option when none is provided", async () => {
+		const fakeChild = makeFakeChild();
+		execFileMock.mockReturnValue(fakeChild as unknown as ReturnType<typeof execFile>);
+
+		const service = new SystemSSHService();
+		const promise = service.execute("docker-server", "echo hi");
+		fakeChild.emit("close", 0);
+		await promise;
+
+		const [, , execOptions] = execFileMock.mock.calls[0] as unknown as [string, string[], { signal?: AbortSignal }];
+		expect(execOptions.signal).toBeUndefined();
+	});
+
 	it("adds ControlMaster/ControlPersist/ControlPath options on non-Windows platforms", async () => {
 		setPlatform("darwin");
 		const fakeChild = makeFakeChild();

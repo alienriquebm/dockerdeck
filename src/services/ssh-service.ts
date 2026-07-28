@@ -31,6 +31,8 @@ export interface SSHExecuteOptions {
 	maxStdoutBytes?: number;
 	/** Maximum bytes to capture from stderr. Default: 64 KB. */
 	maxStderrBytes?: number;
+	/** When aborted, the underlying `ssh` child process is killed immediately instead of left to finish/time out. */
+	signal?: AbortSignal;
 }
 
 /**
@@ -118,7 +120,16 @@ export class SystemSSHService implements SSHService {
 			let stdoutBuf = "";
 			let stderrBuf = "";
 
-			const child = execFile("ssh", sshArgs, { timeout: 0, windowsHide: true });
+			// Built incrementally rather than as `{ ..., signal: options.signal }` because
+			// exactOptionalPropertyTypes forbids assigning `undefined` to an optional field.
+			const execFileOptions: { timeout: number; windowsHide: boolean; signal?: AbortSignal } = {
+				timeout: 0,
+				windowsHide: true,
+			};
+			if (options.signal !== undefined) {
+				execFileOptions.signal = options.signal;
+			}
+			const child = execFile("ssh", sshArgs, execFileOptions);
 
 			const timer = setTimeout(() => {
 				timedOut = true;

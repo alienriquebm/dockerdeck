@@ -20,6 +20,8 @@ import type { ComposeServiceStatus, RemoteComposeStatus } from "../models/compos
 
 export interface RemoteDockerServiceOptions {
 	timeoutMs?: number;
+	/** When aborted, the in-flight `ssh` child process for this call is killed immediately. */
+	signal?: AbortSignal;
 }
 
 export interface ComposeOptions extends RemoteDockerServiceOptions {
@@ -57,8 +59,15 @@ export interface RemoteDockerService {
 
 const INSPECT_STATE_FORMAT = "{{json .State}}";
 
-function sshOptionsFrom(options: RemoteDockerServiceOptions): { timeoutMs?: number } {
-	return options.timeoutMs !== undefined ? { timeoutMs: options.timeoutMs } : {};
+function sshOptionsFrom(options: RemoteDockerServiceOptions): { timeoutMs?: number; signal?: AbortSignal } {
+	const sshOptions: { timeoutMs?: number; signal?: AbortSignal } = {};
+	if (options.timeoutMs !== undefined) {
+		sshOptions.timeoutMs = options.timeoutMs;
+	}
+	if (options.signal !== undefined) {
+		sshOptions.signal = options.signal;
+	}
+	return sshOptions;
 }
 
 /** Maps a failed SSH/docker command result into an error-shaped RemoteContainerStatus. */

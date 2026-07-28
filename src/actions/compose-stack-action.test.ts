@@ -79,7 +79,10 @@ describe("ComposeStackAction", () => {
 		action.onWillAppear(makeWillAppear(keyAction, settings));
 		await vi.advanceTimersByTimeAsync(0);
 
-		expect(getComposeStatus).toHaveBeenCalledWith("docker-server", "/srv/app", { timeoutMs: 10_000 });
+		expect(getComposeStatus).toHaveBeenCalledWith("docker-server", "/srv/app", {
+			timeoutMs: 10_000,
+			signal: expect.any(AbortSignal) as AbortSignal,
+		});
 		expect(render).toHaveBeenCalledWith(expect.objectContaining({ status: "up", subtitle: "2/2 running" }));
 	});
 
@@ -142,7 +145,10 @@ describe("ComposeStackAction", () => {
 			action.onKeyDown(makeKeyDown(keyAction, settings));
 			await vi.advanceTimersByTimeAsync(0);
 
-			expect(composeUp).toHaveBeenCalledWith("docker-server", "/srv/app", { timeoutMs: 10_000 });
+			expect(composeUp).toHaveBeenCalledWith("docker-server", "/srv/app", {
+				timeoutMs: 10_000,
+				signal: expect.any(AbortSignal) as AbortSignal,
+			});
 			expect(composeDown).not.toHaveBeenCalled();
 		});
 
@@ -157,7 +163,10 @@ describe("ComposeStackAction", () => {
 			action.onKeyDown(makeKeyDown(keyAction, settings));
 			await vi.advanceTimersByTimeAsync(0);
 
-			expect(composeDown).toHaveBeenCalledWith("docker-server", "/srv/app", { timeoutMs: 10_000 });
+			expect(composeDown).toHaveBeenCalledWith("docker-server", "/srv/app", {
+				timeoutMs: 10_000,
+				signal: expect.any(AbortSignal) as AbortSignal,
+			});
 			expect(composeUp).not.toHaveBeenCalled();
 		});
 
@@ -199,7 +208,10 @@ describe("ComposeStackAction", () => {
 		action.onKeyDown(makeKeyDown(keyAction, downSettings));
 		await vi.advanceTimersByTimeAsync(0);
 
-		expect(composeDown).toHaveBeenCalledWith("docker-server", "/srv/app", { timeoutMs: 10_000 });
+		expect(composeDown).toHaveBeenCalledWith("docker-server", "/srv/app", {
+			timeoutMs: 10_000,
+			signal: expect.any(AbortSignal) as AbortSignal,
+		});
 	});
 
 	it("operation 'restart' always runs composeRestart", async () => {
@@ -210,7 +222,10 @@ describe("ComposeStackAction", () => {
 		action.onKeyDown(makeKeyDown(keyAction, restartSettings));
 		await vi.advanceTimersByTimeAsync(0);
 
-		expect(composeRestart).toHaveBeenCalledWith("docker-server", "/srv/app", { timeoutMs: 10_000 });
+		expect(composeRestart).toHaveBeenCalledWith("docker-server", "/srv/app", {
+			timeoutMs: 10_000,
+			signal: expect.any(AbortSignal) as AbortSignal,
+		});
 	});
 
 	it("blocks a repeated press while an operation is already in flight", async () => {

@@ -15,14 +15,22 @@
  *   after a faster, newer refresh already has. Each task receives an
  *   `isCurrent()` guard it should check right before committing a visible
  *   side effect (e.g. `setImage`), and skip rendering if it is stale.
+ * - Invalidating a task (via `stop()`, or `start()`'s internal `stop()`)
+ *   also aborts that task's `AbortSignal`, so the `ssh` child process behind
+ *   an abandoned task is killed immediately instead of left running in the
+ *   background until it finishes or hits its own timeout. `refreshNow()`
+ *   does NOT abort an in-flight task — it reuses the `inFlight` guard and
+ *   simply no-ops if one is already running for that instance id (see the
+ *   class doc above); there is nothing in-flight for it to replace.
  */
 
-export type RefreshTask = (isCurrent: () => boolean) => Promise<void>;
+export type RefreshTask = (isCurrent: () => boolean, signal: AbortSignal) => Promise<void>;
 
 export class StatusRefreshService {
 	private readonly timers = new Map<string, ReturnType<typeof setInterval>>();
 	private readonly inFlight = new Set<string>();
 	private readonly generations = new Map<string, number>();
+	private readonly abortControllers = new Map<string, AbortController>();
 
 	/**
 	 * Starts (or restarts) polling for `instanceId`. Runs `task` once
@@ -51,6 +59,10 @@ export class StatusRefreshService {
 			this.timers.delete(instanceId);
 		}
 		this.inFlight.delete(instanceId);
+		// Kill the ssh child process behind whatever task is still in flight
+		// rather than letting it run to completion in the background.
+		this.abortControllers.get(instanceId)?.abort();
+		this.abortControllers.delete(instanceId);
 		// Bump the epoch so any refresh still in flight from before this stop()
 		// sees isCurrent() === false and discards its (now stale) result.
 		this.generations.set(instanceId, (this.generations.get(instanceId) ?? 0) + 1);
@@ -77,7 +89,9 @@ export class StatusRefreshService {
 			return;
 		}
 		this.inFlight.add(instanceId);
-		task(isCurrent)
+		const controller = new AbortController();
+		this.abortControllers.set(instanceId, controller);
+		task(isCurrent, controller.signal)
 			.catch(() => {
 				// Errors are the task's responsibility to surface (e.g. via the key
 				// face or logger); the refresh loop itself must never throw.
@@ -88,6 +102,7 @@ export class StatusRefreshService {
 				// only the still-current generation's own completion may do that.
 				if (isCurrent()) {
 					this.inFlight.delete(instanceId);
+					this.abortControllers.delete(instanceId);
 				}
 			});
 	}

@@ -178,6 +178,19 @@ describe("SystemRemoteDockerService.getContainerStatus", () => {
 		});
 	});
 
+	it("passes an AbortSignal through to the SSH service", async () => {
+		const state: DockerInspectState = { Running: true };
+		const { ssh, execute } = makeMockSsh(makeResult({ stdout: JSON.stringify(state), exitCode: 0 }));
+		const service = new SystemRemoteDockerService(ssh);
+		const controller = new AbortController();
+
+		await service.getContainerStatus("docker-server", "backend", { signal: controller.signal });
+
+		expect(execute).toHaveBeenCalledWith("docker-server", expect.stringContaining("docker"), {
+			signal: controller.signal,
+		});
+	});
+
 	it("builds the inspect command with the container name safely escaped", async () => {
 		const state: DockerInspectState = { Running: true };
 		const { ssh, execute } = makeMockSsh(makeResult({ stdout: JSON.stringify(state), exitCode: 0 }));
