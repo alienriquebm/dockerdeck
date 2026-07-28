@@ -56,11 +56,16 @@ export class SystemSSHService implements SSHService {
 
 		// Arguments passed as an array — NOT interpreted by a local shell.
 		const sshArgs: string[] = [
-			"-o", "BatchMode=yes",
-			"-o", `ConnectTimeout=${String(connectTimeoutSec)}`,
-			"-o", "ServerAliveInterval=5",
-			"-o", "ServerAliveCountMax=2",
-			"-o", "LogLevel=ERROR",
+			"-o",
+			"BatchMode=yes",
+			"-o",
+			`ConnectTimeout=${String(connectTimeoutSec)}`,
+			"-o",
+			"ServerAliveInterval=5",
+			"-o",
+			"ServerAliveCountMax=2",
+			"-o",
+			"LogLevel=ERROR",
 			// Do NOT add StrictHostKeyChecking=no — let the user's config decide.
 			host,
 			remoteCommand,

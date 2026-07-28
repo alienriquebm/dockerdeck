@@ -19,14 +19,20 @@ import streamDeck, {
 } from "@elgato/streamdeck";
 
 import type { RemoteContainerStatus } from "../models/container-status.js";
-import { resolveRefreshIntervalSeconds, resolveSshTimeoutSeconds, type ContainerActionSettings } from "../models/settings.js";
+import {
+	resolveRefreshIntervalSeconds,
+	resolveSshTimeoutSeconds,
+	type ContainerActionSettings,
+} from "../models/settings.js";
 import { keyRenderer, type ActionIconKind, type KeyRenderer, type KeyRenderInput } from "../rendering/key-renderer.js";
 import { remoteDockerService, type RemoteDockerService } from "../services/remote-docker-service.js";
 import { statusRefreshService, StatusRefreshService } from "../services/status-refresh-service.js";
 import { formatDuration } from "../utils/duration.js";
 import { validateContainerName, validateSshHost } from "../utils/validation.js";
 
-export abstract class BaseContainerAction<TSettings extends ContainerActionSettings> extends SingletonAction<TSettings> {
+export abstract class BaseContainerAction<
+	TSettings extends ContainerActionSettings,
+> extends SingletonAction<TSettings> {
 	protected readonly logger = streamDeck.logger.createScope(this.constructor.name);
 
 	/** Last known status per instance id, kept fresh by every successful refresh. Used by subclasses to decide start-vs-stop, etc. */
@@ -63,10 +69,16 @@ export abstract class BaseContainerAction<TSettings extends ContainerActionSetti
 		}
 		const keyAction = source;
 		const intervalSeconds = resolveRefreshIntervalSeconds(settings.refreshIntervalSeconds);
-		this.refreshService.start(keyAction.id, intervalSeconds, (isCurrent) => this.refresh(keyAction, settings, isCurrent));
+		this.refreshService.start(keyAction.id, intervalSeconds, (isCurrent) =>
+			this.refresh(keyAction, settings, isCurrent),
+		);
 	}
 
-	protected async refresh(keyAction: KeyAction<TSettings>, settings: TSettings, isCurrent: () => boolean): Promise<void> {
+	protected async refresh(
+		keyAction: KeyAction<TSettings>,
+		settings: TSettings,
+		isCurrent: () => boolean,
+	): Promise<void> {
 		try {
 			const hostCheck = validateSshHost(settings.sshHost);
 			if (!hostCheck.valid) {
@@ -104,7 +116,10 @@ export abstract class BaseContainerAction<TSettings extends ContainerActionSetti
 			// StatusRefreshService swallows rejections from this task to keep the
 			// polling loop alive; log here so a rendering/SDK-level failure is
 			// still visible instead of vanishing silently.
-			this.logger.error("Unexpected failure while refreshing the key face", error instanceof Error ? error.message : String(error));
+			this.logger.error(
+				"Unexpected failure while refreshing the key face",
+				error instanceof Error ? error.message : String(error),
+			);
 		}
 	}
 
@@ -133,7 +148,11 @@ export abstract class BaseContainerAction<TSettings extends ContainerActionSetti
 		await keyAction.setImage(this.renderer.render(input));
 	}
 
-	protected async renderWorking(keyAction: KeyAction<TSettings>, containerName: string, subtitle?: string): Promise<void> {
+	protected async renderWorking(
+		keyAction: KeyAction<TSettings>,
+		containerName: string,
+		subtitle?: string,
+	): Promise<void> {
 		const input: KeyRenderInput = { title: containerName, status: "working", icon: this.icon };
 		if (subtitle !== undefined) {
 			input.subtitle = subtitle;

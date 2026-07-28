@@ -19,7 +19,9 @@ function makeKeyDown(keyAction: ReturnType<typeof makeFakeKeyAction>, settings: 
 }
 
 function makeWillAppear(keyAction: ReturnType<typeof makeFakeKeyAction>, settings: ContainerToggleSettings) {
-	return { action: keyAction, payload: { settings } } as unknown as Parameters<ContainerToggleAction["onWillAppear"]>[0];
+	return { action: keyAction, payload: { settings } } as unknown as Parameters<
+		ContainerToggleAction["onWillAppear"]
+	>[0];
 }
 
 describe("ContainerToggleAction", () => {
@@ -27,13 +29,31 @@ describe("ContainerToggleAction", () => {
 	let renderer: KeyRenderer;
 	let refreshService: StatusRefreshService;
 	let getContainerStatus: ReturnType<
-		typeof vi.fn<(host: string, containerName: string, options?: RemoteDockerServiceOptions) => Promise<RemoteContainerStatus>>
+		typeof vi.fn<
+			(
+				host: string,
+				containerName: string,
+				options?: RemoteDockerServiceOptions,
+			) => Promise<RemoteContainerStatus>
+		>
 	>;
 	let startContainer: ReturnType<
-		typeof vi.fn<(host: string, containerName: string, options?: RemoteDockerServiceOptions) => Promise<RemoteContainerStatus>>
+		typeof vi.fn<
+			(
+				host: string,
+				containerName: string,
+				options?: RemoteDockerServiceOptions,
+			) => Promise<RemoteContainerStatus>
+		>
 	>;
 	let stopContainer: ReturnType<
-		typeof vi.fn<(host: string, containerName: string, options?: RemoteDockerServiceOptions) => Promise<RemoteContainerStatus>>
+		typeof vi.fn<
+			(
+				host: string,
+				containerName: string,
+				options?: RemoteDockerServiceOptions,
+			) => Promise<RemoteContainerStatus>
+		>
 	>;
 	let render: ReturnType<typeof vi.fn<(input: KeyRenderInput) => string>>;
 
@@ -63,13 +83,19 @@ describe("ContainerToggleAction", () => {
 
 	const settings: ContainerToggleSettings = { sshHost: "docker-server", containerName: "backend" };
 
-	async function appearAsStopped(action: ContainerToggleAction, keyAction: ReturnType<typeof makeFakeKeyAction>): Promise<void> {
+	async function appearAsStopped(
+		action: ContainerToggleAction,
+		keyAction: ReturnType<typeof makeFakeKeyAction>,
+	): Promise<void> {
 		getContainerStatus.mockResolvedValue({ name: "backend", visualStatus: "stopped", running: false });
 		action.onWillAppear(makeWillAppear(keyAction, settings));
 		await vi.advanceTimersByTimeAsync(0);
 	}
 
-	async function appearAsRunning(action: ContainerToggleAction, keyAction: ReturnType<typeof makeFakeKeyAction>): Promise<void> {
+	async function appearAsRunning(
+		action: ContainerToggleAction,
+		keyAction: ReturnType<typeof makeFakeKeyAction>,
+	): Promise<void> {
 		getContainerStatus.mockResolvedValue({ name: "backend", visualStatus: "running", running: true });
 		action.onWillAppear(makeWillAppear(keyAction, settings));
 		await vi.advanceTimersByTimeAsync(0);
@@ -173,7 +199,9 @@ describe("ContainerToggleAction", () => {
 		action.onKeyDown(makeKeyDown(keyAction, settings)); // arms
 		await vi.advanceTimersByTimeAsync(0);
 
-		action.onWillDisappear({ action: keyAction } as unknown as Parameters<ContainerToggleAction["onWillDisappear"]>[0]);
+		action.onWillDisappear({ action: keyAction } as unknown as Parameters<
+			ContainerToggleAction["onWillDisappear"]
+		>[0]);
 
 		// Reappearing resets lastStatus (nothing polled yet), so a fresh press
 		// with no known status defaults to "not running" -> starts, not stops.

@@ -17,9 +17,17 @@ import streamDeck, {
 } from "@elgato/streamdeck";
 
 import type { RemoteComposeStatus } from "../models/compose-status.js";
-import { resolveRefreshIntervalSeconds, resolveSshTimeoutSeconds, type ComposeActionSettings } from "../models/settings.js";
+import {
+	resolveRefreshIntervalSeconds,
+	resolveSshTimeoutSeconds,
+	type ComposeActionSettings,
+} from "../models/settings.js";
 import { keyRenderer, type KeyRenderer, type KeyRenderInput } from "../rendering/key-renderer.js";
-import { remoteDockerService, type ComposeOptions, type RemoteDockerService } from "../services/remote-docker-service.js";
+import {
+	remoteDockerService,
+	type ComposeOptions,
+	type RemoteDockerService,
+} from "../services/remote-docker-service.js";
 import { statusRefreshService, StatusRefreshService } from "../services/status-refresh-service.js";
 import { validateComposePath, validateSshHost } from "../utils/validation.js";
 
@@ -31,6 +39,9 @@ function composePathBasename(path: string): string {
 	return lastSlash === -1 ? trimmed : trimmed.slice(lastSlash + 1);
 }
 
+// @ts-expect-error TS1238: SDK's .d.ts targets native TC39 decorators; this project uses
+// experimentalDecorators (required for Vitest's esbuild transform to parse @action(...) at
+// all — see AGENTS.md's "Known, accepted quirks"). Compiled output is correct either way.
 @action({ UUID: "com.alienriquebm.dockerdeck.compose-stack" })
 export class ComposeStackAction extends SingletonAction<ComposeActionSettings> {
 	private readonly lastStatus = new Map<string, RemoteComposeStatus>();
@@ -76,7 +87,9 @@ export class ComposeStackAction extends SingletonAction<ComposeActionSettings> {
 		}
 		const keyAction = source;
 		const intervalSeconds = resolveRefreshIntervalSeconds(settings.refreshIntervalSeconds);
-		this.refreshService.start(keyAction.id, intervalSeconds, (isCurrent) => this.refresh(keyAction, settings, isCurrent));
+		this.refreshService.start(keyAction.id, intervalSeconds, (isCurrent) =>
+			this.refresh(keyAction, settings, isCurrent),
+		);
 	}
 
 	private async refresh(
@@ -98,7 +111,11 @@ export class ComposeStackAction extends SingletonAction<ComposeActionSettings> {
 
 			const sshHost = settings.sshHost as string;
 			const composePath = settings.composePath as string;
-			const status = await this.dockerService.getComposeStatus(sshHost, composePath, this.composeOptions(settings));
+			const status = await this.dockerService.getComposeStatus(
+				sshHost,
+				composePath,
+				this.composeOptions(settings),
+			);
 
 			if (!isCurrent()) {
 				return;
@@ -110,7 +127,10 @@ export class ComposeStackAction extends SingletonAction<ComposeActionSettings> {
 			}
 			await this.render(keyAction, settings, status);
 		} catch (error) {
-			logger.error("Unexpected failure while refreshing the compose stack face", error instanceof Error ? error.message : String(error));
+			logger.error(
+				"Unexpected failure while refreshing the compose stack face",
+				error instanceof Error ? error.message : String(error),
+			);
 		}
 	}
 
@@ -161,11 +181,16 @@ export class ComposeStackAction extends SingletonAction<ComposeActionSettings> {
 
 			this.lastStatus.set(id, status);
 			if (status.errorMessage !== undefined) {
-				logger.warn(`${composePath}@${sshHost}: ${operation} -> ${status.visualStatus} — ${status.errorMessage}`);
+				logger.warn(
+					`${composePath}@${sshHost}: ${operation} -> ${status.visualStatus} — ${status.errorMessage}`,
+				);
 			}
 			await this.render(keyAction, settings, status);
 		} catch (error) {
-			logger.error("Unexpected failure while operating the compose stack", error instanceof Error ? error.message : String(error));
+			logger.error(
+				"Unexpected failure while operating the compose stack",
+				error instanceof Error ? error.message : String(error),
+			);
 		}
 	}
 
@@ -184,7 +209,11 @@ export class ComposeStackAction extends SingletonAction<ComposeActionSettings> {
 		return composePathBasename(settings.composePath ?? "");
 	}
 
-	private async render(keyAction: KeyAction<ComposeActionSettings>, settings: ComposeActionSettings, status: RemoteComposeStatus): Promise<void> {
+	private async render(
+		keyAction: KeyAction<ComposeActionSettings>,
+		settings: ComposeActionSettings,
+		status: RemoteComposeStatus,
+	): Promise<void> {
 		const input: KeyRenderInput = { title: this.titleFor(settings), status: status.visualStatus, icon: "stack" };
 		if (status.totalCount > 0) {
 			input.subtitle = `${status.runningCount.toString()}/${status.totalCount.toString()} running`;
@@ -192,13 +221,21 @@ export class ComposeStackAction extends SingletonAction<ComposeActionSettings> {
 		await keyAction.setImage(this.renderer.render(input));
 	}
 
-	private async renderIssue(keyAction: KeyAction<ComposeActionSettings>, settings: ComposeActionSettings, message: string): Promise<void> {
-		const title = settings.composePath !== undefined && settings.composePath !== "" ? this.titleFor(settings) : "SETUP";
+	private async renderIssue(
+		keyAction: KeyAction<ComposeActionSettings>,
+		settings: ComposeActionSettings,
+		message: string,
+	): Promise<void> {
+		const title =
+			settings.composePath !== undefined && settings.composePath !== "" ? this.titleFor(settings) : "SETUP";
 		const input: KeyRenderInput = { title, status: "unknown", icon: "stack", subtitle: message };
 		await keyAction.setImage(this.renderer.render(input));
 	}
 
-	private async renderWorking(keyAction: KeyAction<ComposeActionSettings>, settings: ComposeActionSettings): Promise<void> {
+	private async renderWorking(
+		keyAction: KeyAction<ComposeActionSettings>,
+		settings: ComposeActionSettings,
+	): Promise<void> {
 		const input: KeyRenderInput = { title: this.titleFor(settings), status: "working", icon: "stack" };
 		await keyAction.setImage(this.renderer.render(input));
 	}

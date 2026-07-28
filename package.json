@@ -10,7 +10,8 @@
         "lint:fix": "eslint src/ --fix",
         "format": "prettier --write src/",
         "format:check": "prettier --check src/",
-        "validate": "npm run lint && npm run test && npx @elgato/cli@latest validate com.alienriquebm.dockerdeck.sdPlugin",
+        "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.test.json",
+        "validate": "npm run lint && npm run typecheck && npm run format:check && npm run test && npx @elgato/cli@latest validate com.alienriquebm.dockerdeck.sdPlugin",
         "package": "npm run build && npx @elgato/cli@latest pack com.alienriquebm.dockerdeck.sdPlugin"
     },
     "type": "module",

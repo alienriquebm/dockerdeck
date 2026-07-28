@@ -107,7 +107,7 @@ Every `*.ts` file under `src/` has a co-located `*.test.ts` sibling. Keep it tha
 - ESLint uses `typescript-eslint`'s `strictTypeChecked` config. Notable consequences already hit in this codebase:
   - `exactOptionalPropertyTypes: true` — never assign `undefined` to an optional field explicitly. Build optional fields incrementally (`if (x !== undefined) obj.field = x;`) rather than spreading `{ field: possiblyUndefined }`.
   - `noUncheckedIndexedAccess: true` — array/tuple index access returns `T | undefined` unless the array's exact length is encoded in its type (e.g. a `[string, string]` tuple). Use `?.[0]` or a tuple type, not a bare non-null assumption.
-  - Test mocks for `vi.fn()` must be given an explicit generic type argument (`vi.fn<SomeFunctionType>()`) when assigned to a typed interface field — a bare `vi.fn()` produces a type too wide to satisfy `RemoteDockerService`/`KeyRenderer` etc. and fails **only at build time** (`npm run build`, via `@rollup/plugin-typescript`), not at `npm run lint` — always run build after adding/editing test mocks, lint alone is not sufficient.
+  - Test mocks for `vi.fn()` must be given an explicit generic type argument (`vi.fn<SomeFunctionType>()`) when assigned to a typed interface field — a bare `vi.fn()` produces a type too wide to satisfy `RemoteDockerService`/`KeyRenderer` etc. `npm run lint` alone won't catch this; run `npm run typecheck` (or `npm run build`, which only covers files reachable from `src/plugin.ts`, i.e. not test files) after adding/editing test mocks.
   - `no-explicit-any` is an error; `no-floating-promises` and `no-misused-promises` are errors.
 - Settings types (`models/settings.ts`) are declared as `type X = { field?: T }` object literals, **not** `interface`. The `@elgato/streamdeck` SDK constrains generic settings to `JsonObject` (an indexed type); a plain `type` literal structurally satisfies that via TypeScript's implicit-index-signature leniency for object literal types, an `interface` does not. Don't convert these to interfaces.
 - Comments are rare and short by design (see the repo's general house style) — a comment exists only where it explains a non-obvious constraint or a bug that was actually hit (grep for "Regression test" / "found on the physical device" style comments — they're load-bearing documentation, don't delete them during refactors).
@@ -130,7 +130,8 @@ npm run test            # vitest run
 npm run test:watch      # vitest (watch mode)
 npm run lint / lint:fix
 npm run format / format:check
-npm run validate        # lint + test + `streamdeck validate` on the manifest
+npm run typecheck       # tsc --noEmit against both tsconfig.json and tsconfig.test.json
+npm run validate        # lint + typecheck + format:check + test + `streamdeck validate` on the manifest
 npm run package         # build + `streamdeck pack` -> .streamDeckPlugin file
 
 npx @elgato/cli@latest --list                       # list linked plugins
@@ -139,7 +140,7 @@ npx @elgato/cli@latest restart com.alienriquebm.dockerdeck   # reload after a bu
 
 ## Known, accepted quirks — do not "fix" these without re-reading why
 
-- **Build-time warning**: `TS1238: Unable to resolve signature of class decorator when called as an expression` on every `@action(...)`-decorated class. This comes from a mismatch between the SDK's `.d.ts` (written for native TC39 decorators) and this project's `tsconfig.json` (`experimentalDecorators: true`, legacy decorators). Flipping `experimentalDecorators` to `false` removes the warning but **breaks `npm run test`** — Vitest's esbuild-based transform then fails to parse `@action(...)` at all (`SyntaxError: Invalid or unexpected token`). This was tried and reverted during Phase 4. Leave `experimentalDecorators: true`; the warning is cosmetic and the compiled output is correct.
+- **`TS1238: Unable to resolve signature of class decorator when called as an expression`** would otherwise appear on every `@action(...)`-decorated class (the 4 action files). It comes from a mismatch between the SDK's `.d.ts` (written for native TC39 decorators) and this project's `tsconfig.json` (`experimentalDecorators: true`, legacy decorators). Flipping `experimentalDecorators` to `false` removes it but **breaks `npm run test`** — Vitest's esbuild-based transform then fails to parse `@action(...)` at all (`SyntaxError: Invalid or unexpected token`). This was tried and reverted during Phase 4. Leave `experimentalDecorators: true`. Since Phase 7, each occurrence is suppressed with a `// @ts-expect-error TS1238: ...` comment immediately above the `@action(...)` line (not a blanket tsconfig/eslint suppression) so `npm run typecheck` stays meaningful — a *different* error at that exact spot would still surface as "unused @ts-expect-error directive" mismatch, or as ESLint's ts-expect-error checks flagging drift. If the SDK ever ships native-decorator-compatible types and the error stops occurring, `tsc` will fail with "Unused '@ts-expect-error' directive" — that's your signal to delete the comment, not a bug.
 - Manifest fallback images (`imgs/actions/*/{icon,key}.png`) are all copies of one generic placeholder PNG — the real key face is always drawn at runtime by `KeyRenderer`, so these only matter for the action list icon and the split-second before the first `setImage()` call. If Phase 7 polish work wants custom art here, that's fine to add, but it's cosmetic, not functional.
 
 ## The user's development/testing environment (for context, not to hardcode)

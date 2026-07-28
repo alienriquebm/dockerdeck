@@ -40,12 +40,12 @@ describe("SvgKeyRenderer", () => {
 
 	it("omits subtitle/footer markup when not given", () => {
 		const svg = renderDecoded({ title: "backend", status: "unknown" });
-		expect(svg).not.toContain("opacity=\"0.85\"");
+		expect(svg).not.toContain('opacity="0.85"');
 	});
 
 	it("includes subtitle when given", () => {
 		const svg = renderDecoded({ title: "backend", status: "healthy", subtitle: "healthy" });
-		expect(svg).toContain("opacity=\"0.85\"");
+		expect(svg).toContain('opacity="0.85"');
 	});
 
 	it("includes footer when given", () => {

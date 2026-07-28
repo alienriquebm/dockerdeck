@@ -30,8 +30,8 @@ describe("buildKeySvg", () => {
 
 	it("omits subtitle and footer lines when not provided", () => {
 		const svg = buildKeySvg(baseParams);
-		expect(svg).not.toContain("opacity=\"0.85\"");
-		expect(svg).not.toContain("opacity=\"0.75\"");
+		expect(svg).not.toContain('opacity="0.85"');
+		expect(svg).not.toContain('opacity="0.75"');
 	});
 
 	it("includes subtitle and footer when provided", () => {
@@ -47,7 +47,7 @@ describe("buildKeySvg", () => {
 	});
 
 	it("escapes XML-significant characters in the subtitle and footer", () => {
-		const svg = buildKeySvg({ ...baseParams, subtitle: "a & b", footer: "\"quoted\"" });
+		const svg = buildKeySvg({ ...baseParams, subtitle: "a & b", footer: '"quoted"' });
 		expect(svg).toContain("a &amp; b");
 		expect(svg).toContain("&quot;quoted&quot;");
 	});

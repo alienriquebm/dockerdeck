@@ -33,9 +33,21 @@ export interface RemoteDockerService {
 		containerName: string,
 		options?: RemoteDockerServiceOptions,
 	): Promise<RemoteContainerStatus>;
-	startContainer(host: string, containerName: string, options?: RemoteDockerServiceOptions): Promise<RemoteContainerStatus>;
-	stopContainer(host: string, containerName: string, options?: RemoteDockerServiceOptions): Promise<RemoteContainerStatus>;
-	restartContainer(host: string, containerName: string, options?: RemoteDockerServiceOptions): Promise<RemoteContainerStatus>;
+	startContainer(
+		host: string,
+		containerName: string,
+		options?: RemoteDockerServiceOptions,
+	): Promise<RemoteContainerStatus>;
+	stopContainer(
+		host: string,
+		containerName: string,
+		options?: RemoteDockerServiceOptions,
+	): Promise<RemoteContainerStatus>;
+	restartContainer(
+		host: string,
+		containerName: string,
+		options?: RemoteDockerServiceOptions,
+	): Promise<RemoteContainerStatus>;
 
 	getComposeStatus(host: string, composePath: string, options?: ComposeOptions): Promise<RemoteComposeStatus>;
 	composeUp(host: string, composePath: string, options?: ComposeOptions): Promise<RemoteComposeStatus>;
@@ -74,7 +86,13 @@ function composeStatus(
 	errorMessage?: string,
 ): RemoteComposeStatus {
 	const runningCount = services.filter((service) => service.state === "running").length;
-	const status: RemoteComposeStatus = { composePath, visualStatus, services, runningCount, totalCount: services.length };
+	const status: RemoteComposeStatus = {
+		composePath,
+		visualStatus,
+		services,
+		runningCount,
+		totalCount: services.length,
+	};
 	if (projectName !== undefined) {
 		status.projectName = projectName;
 	}
@@ -85,7 +103,11 @@ function composeStatus(
 }
 
 /** Maps a failed SSH/docker compose command result into an error-shaped RemoteComposeStatus. */
-function composeErrorStatus(composePath: string, projectName: string | undefined, result: SSHCommandResult): RemoteComposeStatus {
+function composeErrorStatus(
+	composePath: string,
+	projectName: string | undefined,
+	result: SSHCommandResult,
+): RemoteComposeStatus {
 	const classified = classifyComposeCommandError(result.exitCode, result.stderr, result.timedOut);
 	return composeStatus(composePath, projectName, classified.kind, [], classified.message);
 }
@@ -127,7 +149,12 @@ export class SystemRemoteDockerService implements RemoteDockerService {
 		containerName: string,
 		options: RemoteDockerServiceOptions = {},
 	): Promise<RemoteContainerStatus> {
-		const remoteCommand = buildRemoteCommand("docker", ["inspect", "--format", INSPECT_STATE_FORMAT, containerName]);
+		const remoteCommand = buildRemoteCommand("docker", [
+			"inspect",
+			"--format",
+			INSPECT_STATE_FORMAT,
+			containerName,
+		]);
 		const result = await this.ssh.execute(host, remoteCommand, sshOptionsFrom(options));
 
 		if (result.timedOut || result.exitCode !== 0) {
@@ -225,7 +252,11 @@ export class SystemRemoteDockerService implements RemoteDockerService {
 		return this.getContainerStatus(host, containerName, options);
 	}
 
-	async getComposeStatus(host: string, composePath: string, options: ComposeOptions = {}): Promise<RemoteComposeStatus> {
+	async getComposeStatus(
+		host: string,
+		composePath: string,
+		options: ComposeOptions = {},
+	): Promise<RemoteComposeStatus> {
 		const args = composeArgs(options.projectName, ["ps", "-a", "--format", "json"]);
 		const remoteCommand = buildRemoteCommandInDir(composePath, "docker", args);
 		const result = await this.ssh.execute(host, remoteCommand, sshOptionsFrom(options));
@@ -247,11 +278,22 @@ export class SystemRemoteDockerService implements RemoteDockerService {
 				return service;
 			});
 		} catch {
-			return composeStatus(composePath, options.projectName, "docker-error", [], "Received an invalid response from Docker Compose.");
+			return composeStatus(
+				composePath,
+				options.projectName,
+				"docker-error",
+				[],
+				"Received an invalid response from Docker Compose.",
+			);
 		}
 
 		const runningCount = services.filter((service) => service.state === "running").length;
-		return composeStatus(composePath, options.projectName, deriveComposeVisualStatus(runningCount, services.length), services);
+		return composeStatus(
+			composePath,
+			options.projectName,
+			deriveComposeVisualStatus(runningCount, services.length),
+			services,
+		);
 	}
 
 	async composeUp(host: string, composePath: string, options: ComposeOptions = {}): Promise<RemoteComposeStatus> {
@@ -262,7 +304,11 @@ export class SystemRemoteDockerService implements RemoteDockerService {
 		return this.runComposeControlCommand(host, composePath, ["down"], options);
 	}
 
-	async composeRestart(host: string, composePath: string, options: ComposeOptions = {}): Promise<RemoteComposeStatus> {
+	async composeRestart(
+		host: string,
+		composePath: string,
+		options: ComposeOptions = {},
+	): Promise<RemoteComposeStatus> {
 		return this.runComposeControlCommand(host, composePath, ["restart"], options);
 	}
 

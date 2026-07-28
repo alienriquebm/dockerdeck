@@ -61,9 +61,23 @@ function classify(
 }
 
 export function classifyCommandError(exitCode: number, stderr: string, timedOut: boolean): ClassifiedError {
-	return classify(exitCode, stderr, timedOut, CONTAINER_MISSING_PATTERNS, "Container not found.", "Docker command failed");
+	return classify(
+		exitCode,
+		stderr,
+		timedOut,
+		CONTAINER_MISSING_PATTERNS,
+		"Container not found.",
+		"Docker command failed",
+	);
 }
 
 export function classifyComposeCommandError(exitCode: number, stderr: string, timedOut: boolean): ClassifiedError {
-	return classify(exitCode, stderr, timedOut, COMPOSE_MISSING_PATTERNS, "Compose path or file not found.", "Docker Compose command failed");
+	return classify(
+		exitCode,
+		stderr,
+		timedOut,
+		COMPOSE_MISSING_PATTERNS,
+		"Compose path or file not found.",
+		"Docker Compose command failed",
+	);
 }

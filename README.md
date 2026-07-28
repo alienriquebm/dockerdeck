@@ -155,7 +155,8 @@ npm run lint           # eslint src/
 npm run lint:fix
 npm run format         # prettier --write src/
 npm run format:check
-npm run validate       # lint + test + `streamdeck validate` on the manifest
+npm run typecheck      # tsc --noEmit against both tsconfig.json and tsconfig.test.json
+npm run validate       # lint + typecheck + format:check + test + `streamdeck validate` on the manifest
 ```
 
 ## Packaging
@@ -186,8 +187,8 @@ This is a settings problem, not a connectivity one. Open the key's Property Insp
 **Changes I made in `npm run watch` aren't showing up on the device**
 Make sure the plugin is linked (`npx @elgato/cli@latest link ...`, see [Local development](#local-development)) and that the Stream Deck app actually restarted the plugin — `watch`'s `--watch.onEnd` hook does this automatically, but a manual `npm run build` does not; run `npx @elgato/cli@latest restart com.alienriquebm.dockerdeck` afterward.
 
-**A `TS1238` warning appears during `npm run build`**
-This is a known, cosmetic mismatch between the Stream Deck SDK's type declarations (written for native TC39 decorators) and this project's `experimentalDecorators: true` setting (required for Vitest to parse the `@action(...)` decorator at all). It doesn't affect the compiled output. Don't "fix" it by flipping `experimentalDecorators` — that breaks the test suite instead.
+**`npm run typecheck` fails with "Unused '@ts-expect-error' directive" on an action file**
+Each `@action(...)`-decorated class carries a `// @ts-expect-error TS1238: ...` comment suppressing a known mismatch between the Stream Deck SDK's type declarations (written for native TC39 decorators) and this project's `experimentalDecorators: true` setting (required for Vitest to parse `@action(...)` at all — flipping that setting breaks the test suite instead). If a newer SDK version fixes its types and the underlying `TS1238` error stops occurring, `tsc` will flag the now-unused suppression comment — that's your cue to simply delete it, not a real bug.
 
 ### Error messages: key vs. logs
 

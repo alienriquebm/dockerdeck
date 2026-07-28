@@ -108,9 +108,7 @@ describe("SystemRemoteDockerService.getContainerStatus", () => {
 	});
 
 	it("maps a missing container to visualStatus 'missing'", async () => {
-		const { ssh } = makeMockSsh(
-			makeResult({ stdout: "", stderr: "error: no such object: backend", exitCode: 1 }),
-		);
+		const { ssh } = makeMockSsh(makeResult({ stdout: "", stderr: "error: no such object: backend", exitCode: 1 }));
 		const service = new SystemRemoteDockerService(ssh);
 
 		const status = await service.getContainerStatus("docker-server", "backend");
@@ -154,7 +152,11 @@ describe("SystemRemoteDockerService.getContainerStatus", () => {
 
 	it("maps a generic docker failure to visualStatus 'docker-error'", async () => {
 		const { ssh } = makeMockSsh(
-			makeResult({ stdout: "", stderr: "Got permission denied while trying to connect to the Docker daemon socket", exitCode: 1 }),
+			makeResult({
+				stdout: "",
+				stderr: "Got permission denied while trying to connect to the Docker daemon socket",
+				exitCode: 1,
+			}),
 		);
 		const service = new SystemRemoteDockerService(ssh);
 
@@ -200,7 +202,11 @@ describe("SystemRemoteDockerService control operations", () => {
 	});
 
 	it("startContainer runs docker start then re-queries status", async () => {
-		const runningState: DockerInspectState = { Running: true, Status: "running", StartedAt: "2026-07-27T12:00:00Z" };
+		const runningState: DockerInspectState = {
+			Running: true,
+			Status: "running",
+			StartedAt: "2026-07-27T12:00:00Z",
+		};
 		const { ssh, execute } = makeSequencedMockSsh([
 			makeResult({ stdout: "", exitCode: 0 }), // docker start
 			makeResult({ stdout: JSON.stringify(runningState), exitCode: 0 }), // docker inspect
@@ -234,7 +240,11 @@ describe("SystemRemoteDockerService control operations", () => {
 	});
 
 	it("restartContainer runs docker restart then re-queries status", async () => {
-		const runningState: DockerInspectState = { Running: true, Status: "running", StartedAt: "2026-07-27T12:00:00Z" };
+		const runningState: DockerInspectState = {
+			Running: true,
+			Status: "running",
+			StartedAt: "2026-07-27T12:00:00Z",
+		};
 		const { ssh, execute } = makeSequencedMockSsh([
 			makeResult({ stdout: "", exitCode: 0 }),
 			makeResult({ stdout: JSON.stringify(runningState), exitCode: 0 }),
@@ -282,8 +292,12 @@ describe("SystemRemoteDockerService control operations", () => {
 
 		await service.startContainer("docker-server", "backend", { timeoutMs: 4000 });
 
-		expect(execute).toHaveBeenNthCalledWith(1, "docker-server", expect.stringContaining("start"), { timeoutMs: 4000 });
-		expect(execute).toHaveBeenNthCalledWith(2, "docker-server", expect.stringContaining("inspect"), { timeoutMs: 4000 });
+		expect(execute).toHaveBeenNthCalledWith(1, "docker-server", expect.stringContaining("start"), {
+			timeoutMs: 4000,
+		});
+		expect(execute).toHaveBeenNthCalledWith(2, "docker-server", expect.stringContaining("inspect"), {
+			timeoutMs: 4000,
+		});
 	});
 });
 
@@ -347,7 +361,9 @@ describe("SystemRemoteDockerService.getComposeStatus", () => {
 	});
 
 	it("maps a path with no compose file to visualStatus 'missing' (real docker compose error text)", async () => {
-		const { ssh } = makeMockSsh(makeResult({ stdout: "", stderr: "no configuration file provided: not found", exitCode: 1 }));
+		const { ssh } = makeMockSsh(
+			makeResult({ stdout: "", stderr: "no configuration file provided: not found", exitCode: 1 }),
+		);
 		const service = new SystemRemoteDockerService(ssh);
 
 		const status = await service.getComposeStatus("docker-server", "/srv/empty");
@@ -356,7 +372,9 @@ describe("SystemRemoteDockerService.getComposeStatus", () => {
 	});
 
 	it("maps an SSH-level failure to visualStatus 'ssh-error'", async () => {
-		const { ssh } = makeMockSsh(makeResult({ stdout: "", stderr: "ssh: Could not resolve hostname docker-host", exitCode: 255 }));
+		const { ssh } = makeMockSsh(
+			makeResult({ stdout: "", stderr: "ssh: Could not resolve hostname docker-host", exitCode: 255 }),
+		);
 		const service = new SystemRemoteDockerService(ssh);
 
 		const status = await service.getComposeStatus("docker-server", "/srv/app");
@@ -385,7 +403,9 @@ describe("SystemRemoteDockerService.getComposeStatus", () => {
 	});
 
 	it("omits health when the raw Health field is an empty string", async () => {
-		const { ssh } = makeMockSsh(makeResult({ stdout: `{"Service":"api","State":"running","Health":""}`, exitCode: 0 }));
+		const { ssh } = makeMockSsh(
+			makeResult({ stdout: `{"Service":"api","State":"running","Health":""}`, exitCode: 0 }),
+		);
 		const service = new SystemRemoteDockerService(ssh);
 
 		const status = await service.getComposeStatus("docker-server", "/srv/app");
@@ -437,7 +457,9 @@ describe("SystemRemoteDockerService compose control operations", () => {
 	});
 
 	it("does not re-query status when the control command itself fails", async () => {
-		const { ssh, execute } = makeMockSsh(makeResult({ stdout: "", stderr: "no configuration file provided: not found", exitCode: 1 }));
+		const { ssh, execute } = makeMockSsh(
+			makeResult({ stdout: "", stderr: "no configuration file provided: not found", exitCode: 1 }),
+		);
 		const service = new SystemRemoteDockerService(ssh);
 
 		const status = await service.composeUp("docker-server", "/srv/app");

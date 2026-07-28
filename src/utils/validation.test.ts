@@ -1,10 +1,5 @@
 import { describe, it, expect } from "vitest";
-import {
-	validateSshHost,
-	validateContainerName,
-	validateComposePath,
-	validateRefreshInterval,
-} from "./validation.js";
+import { validateSshHost, validateContainerName, validateComposePath, validateRefreshInterval } from "./validation.js";
 
 // ---------------------------------------------------------------------------
 // validateSshHost

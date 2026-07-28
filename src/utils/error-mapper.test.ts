@@ -9,7 +9,11 @@ describe("classifyCommandError", () => {
 	});
 
 	it("classifies exit code 255 as ssh-error", () => {
-		const result = classifyCommandError(255, "ssh: Could not resolve hostname foo: nodename nor servname provided", false);
+		const result = classifyCommandError(
+			255,
+			"ssh: Could not resolve hostname foo: nodename nor servname provided",
+			false,
+		);
 		expect(result.kind).toBe("ssh-error");
 		expect(result.message).toContain("Could not resolve hostname");
 	});
@@ -31,7 +35,11 @@ describe("classifyCommandError", () => {
 	});
 
 	it("classifies any other non-zero exit as docker-error", () => {
-		const result = classifyCommandError(1, "Cannot connect to the Docker daemon. Is the docker daemon running?", false);
+		const result = classifyCommandError(
+			1,
+			"Cannot connect to the Docker daemon. Is the docker daemon running?",
+			false,
+		);
 		expect(result.kind).toBe("docker-error");
 		expect(result.message).toContain("Cannot connect to the Docker daemon");
 	});
@@ -55,7 +63,11 @@ describe("classifyCommandError", () => {
 	});
 
 	it("never leaks the raw multi-line stack trace", () => {
-		const result = classifyCommandError(1, "Error: boom\n    at Object.<anonymous> (/secret/path/app.js:1:1)", false);
+		const result = classifyCommandError(
+			1,
+			"Error: boom\n    at Object.<anonymous> (/secret/path/app.js:1:1)",
+			false,
+		);
 		expect(result.message).not.toContain("\n");
 	});
 });
@@ -87,7 +99,11 @@ describe("classifyComposeCommandError", () => {
 	});
 
 	it("classifies any other non-zero exit as docker-error", () => {
-		const result = classifyComposeCommandError(1, "service \"backend\" has neither an image nor a build context", false);
+		const result = classifyComposeCommandError(
+			1,
+			'service "backend" has neither an image nor a build context',
+			false,
+		);
 		expect(result.kind).toBe("docker-error");
 	});
 

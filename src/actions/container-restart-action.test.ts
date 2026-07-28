@@ -15,11 +15,15 @@ function makeFakeKeyAction(id: string) {
 }
 
 function makeKeyDown(keyAction: ReturnType<typeof makeFakeKeyAction>, settings: ContainerActionSettings) {
-	return { action: keyAction, payload: { settings } } as unknown as Parameters<ContainerRestartAction["onKeyDown"]>[0];
+	return { action: keyAction, payload: { settings } } as unknown as Parameters<
+		ContainerRestartAction["onKeyDown"]
+	>[0];
 }
 
 function makeWillAppear(keyAction: ReturnType<typeof makeFakeKeyAction>, settings: ContainerActionSettings) {
-	return { action: keyAction, payload: { settings } } as unknown as Parameters<ContainerRestartAction["onWillAppear"]>[0];
+	return { action: keyAction, payload: { settings } } as unknown as Parameters<
+		ContainerRestartAction["onWillAppear"]
+	>[0];
 }
 
 describe("ContainerRestartAction", () => {
@@ -27,10 +31,22 @@ describe("ContainerRestartAction", () => {
 	let renderer: KeyRenderer;
 	let refreshService: StatusRefreshService;
 	let getContainerStatus: ReturnType<
-		typeof vi.fn<(host: string, containerName: string, options?: RemoteDockerServiceOptions) => Promise<RemoteContainerStatus>>
+		typeof vi.fn<
+			(
+				host: string,
+				containerName: string,
+				options?: RemoteDockerServiceOptions,
+			) => Promise<RemoteContainerStatus>
+		>
 	>;
 	let restartContainer: ReturnType<
-		typeof vi.fn<(host: string, containerName: string, options?: RemoteDockerServiceOptions) => Promise<RemoteContainerStatus>>
+		typeof vi.fn<
+			(
+				host: string,
+				containerName: string,
+				options?: RemoteDockerServiceOptions,
+			) => Promise<RemoteContainerStatus>
+		>
 	>;
 	let render: ReturnType<typeof vi.fn<(input: KeyRenderInput) => string>>;
 

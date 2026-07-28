@@ -62,7 +62,14 @@ describe("ComposeStackAction", () => {
 	const settings: ComposeActionSettings = { sshHost: "docker-server", composePath: "/srv/app" };
 
 	function statusOf(overrides: Partial<RemoteComposeStatus> = {}): RemoteComposeStatus {
-		return { composePath: "/srv/app", visualStatus: "up", services: [], runningCount: 2, totalCount: 2, ...overrides };
+		return {
+			composePath: "/srv/app",
+			visualStatus: "up",
+			services: [],
+			runningCount: 2,
+			totalCount: 2,
+			...overrides,
+		};
 	}
 
 	it("queries status and renders it immediately on appear", async () => {
@@ -115,7 +122,9 @@ describe("ComposeStackAction", () => {
 		action.onWillAppear(makeWillAppear(keyAction, settings));
 		await vi.advanceTimersByTimeAsync(0);
 
-		action.onWillDisappear({ action: keyAction } as unknown as Parameters<ComposeStackAction["onWillDisappear"]>[0]);
+		action.onWillDisappear({ action: keyAction } as unknown as Parameters<
+			ComposeStackAction["onWillDisappear"]
+		>[0]);
 		getComposeStatus.mockClear();
 		await vi.advanceTimersByTimeAsync(60_000);
 		expect(getComposeStatus).not.toHaveBeenCalled();

@@ -15,7 +15,9 @@ function makeFakeKeyAction(id: string) {
 }
 
 function makeWillAppear(keyAction: ReturnType<typeof makeFakeKeyAction>, settings: ContainerActionSettings) {
-	return { action: keyAction, payload: { settings } } as unknown as Parameters<ContainerStatusAction["onWillAppear"]>[0];
+	return { action: keyAction, payload: { settings } } as unknown as Parameters<
+		ContainerStatusAction["onWillAppear"]
+	>[0];
 }
 
 function makeWillDisappear(keyAction: ReturnType<typeof makeFakeKeyAction>) {
@@ -27,7 +29,13 @@ describe("ContainerStatusAction", () => {
 	let renderer: KeyRenderer;
 	let refreshService: StatusRefreshService;
 	let getContainerStatus: ReturnType<
-		typeof vi.fn<(host: string, containerName: string, options?: RemoteDockerServiceOptions) => Promise<RemoteContainerStatus>>
+		typeof vi.fn<
+			(
+				host: string,
+				containerName: string,
+				options?: RemoteDockerServiceOptions,
+			) => Promise<RemoteContainerStatus>
+		>
 	>;
 	let render: ReturnType<typeof vi.fn<(input: KeyRenderInput) => string>>;
 
@@ -54,7 +62,12 @@ describe("ContainerStatusAction", () => {
 	});
 
 	it("queries status and renders it immediately on appear", async () => {
-		const status: RemoteContainerStatus = { name: "backend", visualStatus: "healthy", running: true, health: "healthy" };
+		const status: RemoteContainerStatus = {
+			name: "backend",
+			visualStatus: "healthy",
+			running: true,
+			health: "healthy",
+		};
 		getContainerStatus.mockResolvedValue(status);
 
 		const action = new ContainerStatusAction(dockerService, renderer, refreshService);
@@ -64,7 +77,9 @@ describe("ContainerStatusAction", () => {
 		await vi.advanceTimersByTimeAsync(0);
 
 		expect(getContainerStatus).toHaveBeenCalledWith("docker-server", "backend", { timeoutMs: 10_000 });
-		expect(render).toHaveBeenCalledWith(expect.objectContaining({ title: "backend", status: "healthy", subtitle: "healthy" }));
+		expect(render).toHaveBeenCalledWith(
+			expect.objectContaining({ title: "backend", status: "healthy", subtitle: "healthy" }),
+		);
 		expect(keyAction.setImage).toHaveBeenCalledWith("<svg></svg>");
 	});
 
@@ -106,11 +121,18 @@ describe("ContainerStatusAction", () => {
 	});
 
 	it("omits the subtitle when showHealth is disabled", async () => {
-		getContainerStatus.mockResolvedValue({ name: "backend", visualStatus: "healthy", running: true, health: "healthy" });
+		getContainerStatus.mockResolvedValue({
+			name: "backend",
+			visualStatus: "healthy",
+			running: true,
+			health: "healthy",
+		});
 
 		const action = new ContainerStatusAction(dockerService, renderer, refreshService);
 		const keyAction = makeFakeKeyAction("ctx-5");
-		action.onWillAppear(makeWillAppear(keyAction, { sshHost: "docker-server", containerName: "backend", showHealth: false }));
+		action.onWillAppear(
+			makeWillAppear(keyAction, { sshHost: "docker-server", containerName: "backend", showHealth: false }),
+		);
 
 		await vi.advanceTimersByTimeAsync(0);
 
@@ -120,11 +142,18 @@ describe("ContainerStatusAction", () => {
 	});
 
 	it("omits the footer when showUptime is disabled", async () => {
-		getContainerStatus.mockResolvedValue({ name: "backend", visualStatus: "running", running: true, uptimeSeconds: 3600 });
+		getContainerStatus.mockResolvedValue({
+			name: "backend",
+			visualStatus: "running",
+			running: true,
+			uptimeSeconds: 3600,
+		});
 
 		const action = new ContainerStatusAction(dockerService, renderer, refreshService);
 		const keyAction = makeFakeKeyAction("ctx-6");
-		action.onWillAppear(makeWillAppear(keyAction, { sshHost: "docker-server", containerName: "backend", showUptime: false }));
+		action.onWillAppear(
+			makeWillAppear(keyAction, { sshHost: "docker-server", containerName: "backend", showUptime: false }),
+		);
 
 		await vi.advanceTimersByTimeAsync(0);
 
@@ -138,7 +167,13 @@ describe("ContainerStatusAction", () => {
 
 		const action = new ContainerStatusAction(dockerService, renderer, refreshService);
 		const keyAction = makeFakeKeyAction("ctx-7");
-		action.onWillAppear(makeWillAppear(keyAction, { sshHost: "docker-server", containerName: "backend", refreshIntervalSeconds: 2 }));
+		action.onWillAppear(
+			makeWillAppear(keyAction, {
+				sshHost: "docker-server",
+				containerName: "backend",
+				refreshIntervalSeconds: 2,
+			}),
+		);
 		await vi.advanceTimersByTimeAsync(0);
 
 		getContainerStatus.mockClear();
@@ -151,7 +186,13 @@ describe("ContainerStatusAction", () => {
 
 		const action = new ContainerStatusAction(dockerService, renderer, refreshService);
 		const keyAction = makeFakeKeyAction("ctx-8");
-		action.onWillAppear(makeWillAppear(keyAction, { sshHost: "docker-server", containerName: "backend", refreshIntervalSeconds: 5 }));
+		action.onWillAppear(
+			makeWillAppear(keyAction, {
+				sshHost: "docker-server",
+				containerName: "backend",
+				refreshIntervalSeconds: 5,
+			}),
+		);
 		await vi.advanceTimersByTimeAsync(0);
 
 		action.onDidReceiveSettings(

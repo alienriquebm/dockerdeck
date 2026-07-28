@@ -9,9 +9,7 @@
  * get chopped to an identical, undiagnosable fragment for every reason case.
  */
 
-export type ValidationResult =
-	| { valid: true }
-	| { valid: false; reason: "missing" | "invalid"; message: string };
+export type ValidationResult = { valid: true } | { valid: false; reason: "missing" | "invalid"; message: string };
 
 /**
  * SSH host alias characters: alphanumeric, hyphen, underscore, dot.

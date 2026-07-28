@@ -10,6 +10,9 @@ import type { ActionIconKind } from "../rendering/key-renderer.js";
 import { resolveSshTimeoutSeconds, type ContainerActionSettings } from "../models/settings.js";
 import { validateContainerName, validateSshHost } from "../utils/validation.js";
 
+// @ts-expect-error TS1238: SDK's .d.ts targets native TC39 decorators; this project uses
+// experimentalDecorators (required for Vitest's esbuild transform to parse @action(...) at
+// all — see AGENTS.md's "Known, accepted quirks"). Compiled output is correct either way.
 @action({ UUID: "com.alienriquebm.dockerdeck.container-restart" })
 export class ContainerRestartAction extends BaseContainerAction<ContainerActionSettings> {
 	protected readonly icon: ActionIconKind = "restart";
@@ -23,7 +26,9 @@ export class ContainerRestartAction extends BaseContainerAction<ContainerActionS
 		// Routed through refreshService so a restart in flight both blocks a
 		// repeated press AND the periodic status poll from racing it — the same
 		// in-flight guard already protects the polling loop.
-		this.refreshService.refreshNow(keyAction.id, (isCurrent) => this.performRestart(keyAction, settings, isCurrent));
+		this.refreshService.refreshNow(keyAction.id, (isCurrent) =>
+			this.performRestart(keyAction, settings, isCurrent),
+		);
 	}
 
 	private async performRestart(
@@ -53,11 +58,16 @@ export class ContainerRestartAction extends BaseContainerAction<ContainerActionS
 
 			this.lastStatus.set(keyAction.id, status);
 			if (status.errorMessage !== undefined) {
-				this.logger.warn(`${containerName}@${sshHost}: restart -> ${status.visualStatus} — ${status.errorMessage}`);
+				this.logger.warn(
+					`${containerName}@${sshHost}: restart -> ${status.visualStatus} — ${status.errorMessage}`,
+				);
 			}
 			await this.renderStatus(keyAction, containerName, status, settings);
 		} catch (error) {
-			this.logger.error("Unexpected failure while restarting the container", error instanceof Error ? error.message : String(error));
+			this.logger.error(
+				"Unexpected failure while restarting the container",
+				error instanceof Error ? error.message : String(error),
+			);
 		}
 	}
 }

@@ -13,6 +13,9 @@ import { validateContainerName, validateSshHost } from "../utils/validation.js";
 
 const CONFIRM_WINDOW_MS = 4000;
 
+// @ts-expect-error TS1238: SDK's .d.ts targets native TC39 decorators; this project uses
+// experimentalDecorators (required for Vitest's esbuild transform to parse @action(...) at
+// all — see AGENTS.md's "Known, accepted quirks"). Compiled output is correct either way.
 @action({ UUID: "com.alienriquebm.dockerdeck.container-toggle" })
 export class ContainerToggleAction extends BaseContainerAction<ContainerToggleSettings> {
 	protected readonly icon: ActionIconKind = "power";
@@ -74,11 +77,16 @@ export class ContainerToggleAction extends BaseContainerAction<ContainerToggleSe
 
 			this.lastStatus.set(id, status);
 			if (status.errorMessage !== undefined) {
-				this.logger.warn(`${containerName}@${sshHost}: toggle -> ${status.visualStatus} — ${status.errorMessage}`);
+				this.logger.warn(
+					`${containerName}@${sshHost}: toggle -> ${status.visualStatus} — ${status.errorMessage}`,
+				);
 			}
 			await this.renderStatus(keyAction, containerName, status, settings);
 		} catch (error) {
-			this.logger.error("Unexpected failure while toggling the container", error instanceof Error ? error.message : String(error));
+			this.logger.error(
+				"Unexpected failure while toggling the container",
+				error instanceof Error ? error.message : String(error),
+			);
 		}
 	}
 
