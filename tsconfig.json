@@ -12,6 +12,7 @@
 		"noImplicitReturns": true,
 		"noFallthroughCasesInSwitch": true,
 		"exactOptionalPropertyTypes": true,
+		"types": ["node"],
 		"experimentalDecorators": true,
 		"emitDecoratorMetadata": false
 	},

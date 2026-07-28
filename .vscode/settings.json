@@ -1,4 +1,9 @@
 {
+	/* Use this project's own TypeScript (node_modules), not VS Code's bundled
+	 * version, so editor diagnostics always match `npm run typecheck`/CI. */
+	"typescript.tsdk": "node_modules/typescript/lib",
+	"typescript.enablePromptUseWorkspaceTsdk": true,
+
 	/* JSON schemas */
 	"json.schemas": [
 		{
